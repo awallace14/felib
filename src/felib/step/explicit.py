@@ -321,6 +321,8 @@ class CompiledExplicitStep(CompiledStep):
 
         dofs, blocks, _ = args
 
+        verbose = self.solver_options.get("verbose", False)
+
         if self.dt is None:
             dt = self.estimate_stable_dt(blocks)
         else:
@@ -329,12 +331,14 @@ class CompiledExplicitStep(CompiledStep):
         if dt <= 0.0:
             raise ValueError("Explicit step dt must be positive")
 
-        print(f"Estimated explicit dt = {dt:.6e}")
+        if verbose:
+            print(f"Estimated explicit dt = {dt:.6e}")
 
         ninc = max(1, int(np.ceil(self.period / dt)))
         dt = self.period / ninc
 
-        print(f"Using fixed explicit dt = {dt:.6e} with ninc = {ninc}")
+        if verbose:
+            print(f"Using fixed explicit dt = {dt:.6e} with ninc = {ninc}")
 
         u = u0.copy()
         v = np.zeros_like(u0)
@@ -436,10 +440,11 @@ class CompiledExplicitStep(CompiledStep):
             v_half[ddofs] = 0.0
 
             progress = 100.0 * increment / ninc
-            print(
-                f"[ExplicitStep] inc={increment}/{ninc}  "
-                f"time={t_new:.6e}  progress={progress:6.2f}%"
-            )
+            if verbose:
+                print(
+                    f"[ExplicitStep] inc={increment}/{ninc}  "
+                    f"time={t_new:.6e}  progress={progress:6.2f}%"
+                )
 
             if self.history_interval > 0:
                 if increment % self.history_interval == 0 or increment == ninc:
