@@ -240,14 +240,15 @@ class IsoparametricElement(Element):
     def lumped_mass(self, material: Material, p: NDArray) -> NDArray:
         rho = material.density
         ndof = self.nnode * self.dof_per_node
-        me = np.zeros((ndof, ndof), dtype=float)
+        me = np.zeros(ndof, dtype=float)
 
         for w, xi in self.integration_points():
             J = self.jacobian(p, xi)
             P = self.pmatrix(xi)
-            me += rho * w * J * np.dot(P, P.T)
+            row_sum_pp_t = P @ np.sum(P, axis=0)
+            me += rho * w * J * row_sum_pp_t
 
-        return me.sum(axis=1)
+        return me
 
     def jacobian(self, p: NDArray, xi: NDArray) -> float:
         """
