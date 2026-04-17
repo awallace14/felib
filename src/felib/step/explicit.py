@@ -296,7 +296,7 @@ class CompiledExplicitStep(CompiledStep):
             conn = block.connect
 
             for elem_nodes in conn:
-                x = coords[np.asarray(elem_nodes) - 1]
+                x = coords[np.asarray(elem_nodes)]
                 edge_lengths = np.linalg.norm(x - np.roll(x, -1, axis=0), axis=1)
                 char_length = np.min(edge_lengths)
                 dt_elem = char_length / wave_speed
