@@ -129,9 +129,7 @@ def main():
     dispScale = 5.0e5
     showAnimation = True
 
-    # -----------------------------
     # Mesh and assembly
-    # -----------------------------
     nodes, conn = buildBarMesh(length, numElems)
     K, M = assembleSystem(nodes, conn, E, rho, area)
 
@@ -154,9 +152,7 @@ def main():
     print(f"Exact bar mass    = {exactMass:.6e}")
     print(f"Mass error        = {abs(totalMass - exactMass):.6e}")
 
-    # -----------------------------
     # State variables
-    # -----------------------------
     numNodes = len(nodes)
     leftNode = 0
     rightNode = numNodes - 1
@@ -167,9 +163,7 @@ def main():
     a = np.zeros(numNodes)
     vHalf = np.zeros(numNodes)
 
-    # -----------------------------
     # Initial conditions
-    # -----------------------------
     fInt = K @ u
     a[freeDofs] = -fInt[freeDofs] / M[freeDofs]
     vHalf[freeDofs] = v[freeDofs] - 0.5 * dt * a[freeDofs]
@@ -180,9 +174,7 @@ def main():
     a[rightNode] = 0.0
     vHalf[rightNode] = 0.0
 
-    # -----------------------------
     # Storage
-    # -----------------------------
     trackedElems = [5, numElems // 2, numElems - 6]
     stressHist = {e: [] for e in trackedElems}
     analyticalStressHist = {e: [] for e in trackedElems}
@@ -198,9 +190,7 @@ def main():
     sigmaExpected = rho * c * v0
     print(f"Expected incident stress magnitude scale = {sigmaExpected:.6e} Pa")
 
-    # -----------------------------
     # Time integration loop
-    # -----------------------------
     for step in range(numSteps):
         tNew = (step + 1) * dt
 
@@ -232,9 +222,7 @@ def main():
             stressHist[e].append(stress[e])
             analyticalStressHist[e].append(stressAnalytical[e])
 
-    # -----------------------------
     # Convert histories
-    # -----------------------------
     timeHist = np.array(timeHist)
     stressFieldHistory = np.array(stressFieldHistory)
     uHistory = np.array(uHistory)
@@ -244,9 +232,7 @@ def main():
         for t in timeHist
     ])
 
-    # -----------------------------
     # Quantitative verification metrics
-    # -----------------------------
     stressError = stressFieldHistory - analyticalHistory
     maxAbsStressError = np.max(np.abs(stressError))
     rmseStress = np.sqrt(np.mean(stressError**2))
@@ -259,6 +245,10 @@ def main():
     print(f"  Normalized RMSE           = {nrmseStress:.6%}")
 
     print("\nTracked element arrival-time checks")
+
+    def fmtTime(value):
+        return "N/A" if value is None else f"{value:.6e}"
+
     for e in trackedElems:
         xMid = elemMidpoints[e]
         theoreticalIncident = xMid / c
@@ -273,14 +263,14 @@ def main():
 
         incidentError = None if numericalIncident is None else numericalIncident - theoreticalIncident
         reflectionError = None if numericalReflection is None else numericalReflection - theoreticalReflection
-
+        
         print(f"  Element {e:3d} at x = {xMid:.6f} m")
         print(f"    Incident:   theory = {theoreticalIncident:.6e} s, "
-              f"numerical = {numericalIncident:.6e} s, "
-              f"error = {incidentError:.6e} s")
+              f"numerical = {fmtTime(numericalIncident)} s, "
+              f"error = {fmtTime(incidentError)} s")
         print(f"    Reflection: theory = {theoreticalReflection:.6e} s, "
-              f"numerical = {numericalReflection:.6e} s, "
-              f"error = {reflectionError:.6e} s")
+              f"numerical = {fmtTime(numericalReflection)} s, "
+              f"error = {fmtTime(reflectionError)} s")
 
     leftInteriorElem = trackedElems[0]
     numericalPeak = np.max(np.abs(stressHist[leftInteriorElem]))
@@ -291,9 +281,7 @@ def main():
     print(f"  Numerical peak near loaded end = {numericalPeak:.6e} Pa")
     print(f"  Percent error = {peakStressErrorPct:.3f}%")
 
-    # -----------------------------
     # Plot: tracked element stress histories
-    # -----------------------------
     plt.figure(figsize=(10, 6))
     for e in trackedElems:
         plt.plot(timeHist, stressHist[e], label=f"Numerical elem {e}")
@@ -307,9 +295,7 @@ def main():
     plt.tight_layout()
     plt.show()
 
-    # -----------------------------
     # Animation: stress + deformed bar
-    # -----------------------------
     if showAnimation:
         fig, (ax1, ax2) = plt.subplots(
             2, 1, figsize=(11, 8), gridspec_kw={"height_ratios": [2, 1]}
@@ -320,7 +306,7 @@ def main():
         ax1.axhline(0.0, color="k", linewidth=0.8)
         incMarker = ax1.axvline(0.0, linestyle="--", linewidth=1.2, label="Incident front")
         refMarker = ax1.axvline(length, linestyle=":", linewidth=1.2, label="Reflected front")
-        timeText = ax1.text(0.02, 0.95, "", transform=ax1.transAxes, va="top")
+        timeText = ax1.text(0.02, 0.125, "", transform=ax1.transAxes, va="top")
 
         combinedMin = min(np.min(stressFieldHistory), np.min(analyticalHistory))
         combinedMax = max(np.max(stressFieldHistory), np.max(analyticalHistory))
@@ -332,11 +318,11 @@ def main():
         ax1.set_ylabel("Axial stress (Pa)")
         ax1.set_title("Stress wave propagation in bar")
         ax1.grid(True)
-        ax1.legend(loc="upper right")
+        ax1.legend(loc="lower right")
 
         yTop1 = ax1.get_ylim()[1]
-        ax1.text(elemMidpoints[0], 0.92 * yTop1, "Loaded end", ha="left")
-        ax1.text(elemMidpoints[-1], 0.92 * yTop1, "Fixed wall", ha="right")
+        ax1.text(elemMidpoints[0], 0.8 * yTop1, "Loaded end", ha="left")
+        ax1.text(elemMidpoints[-1], 0.8 * yTop1, "Fixed wall", ha="right")
 
         ax2.plot(nodes, np.zeros_like(nodes), "--", lw=1.0, label="Undeformed")
         deformedLine, = ax2.plot([], [], lw=2, marker="o", markersize=3, label="Deformed")
@@ -351,11 +337,11 @@ def main():
         ax2.set_ylabel("Scaled transverse display")
         ax2.set_title(f"Deformed bar view (horizontal deformation scaled by {dispScale:.1e})")
         ax2.grid(True)
-        ax2.legend(loc="upper right")
+        ax2.legend(loc="lower right")
 
         yTop2 = ax2.get_ylim()[1]
-        ax2.text(0.0, 0.85 * yTop2, "Loaded end", ha="left")
-        ax2.text(length, 0.85 * yTop2, "Fixed wall", ha="right")
+        ax2.text(0.0, 0.825 * yTop2, "Loaded end", ha="left")
+        ax2.text(length, 0.825 * yTop2, "Fixed wall", ha="right")
 
         def incidentFrontPosition(t):
             return min(c * t, length)
